@@ -10,6 +10,10 @@
 {% if settings.favicon %}<link rel="icon" href="{{ settings.favicon | image_url: width: 32 }}">{% endif %}
 {{ content_for_header }}
 {{ 'zadra.css' | asset_url | stylesheet_tag }}<script src="{{ 'zadra.js' | asset_url }}" defer></script>
+{%- if settings.motion_enabled -%}
+<script>(function(d){if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('zm');setTimeout(function(){if(!d.hasAttribute('data-zm-ready'))d.classList.remove('zm')},4000)}})(document.documentElement)</script>
+{{ 'zadra-motion.css' | asset_url | stylesheet_tag }}<script src="{{ 'zadra-motion.js' | asset_url }}" defer></script>
+{%- endif -%}
 </head><body>
 <a class="skip" href="#MainContent">Ir al contenido</a>
 {% sections 'header-group' %}
