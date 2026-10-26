@@ -1,0 +1,255 @@
+diff -ruN a/assets/zadra-motion.css b/assets/zadra-motion.css
+--- a/assets/zadra-motion.css	1970-01-01 00:00:00.000000000 +0000
++++ b/assets/zadra-motion.css	2026-10-26 23:42:37.689830707 +0000
+@@ -0,0 +1,65 @@
++/* zadra-motion.css — capa de animación del tema zadra.
++   Todo cuelga de la clase .zm en <html>: la agrega layout/theme.liquid solo si
++   "Activar animaciones" está encendido y el visitante no pidió reducir el movimiento.
++   Sin .zm (o sin JavaScript) la tienda se ve exactamente como antes. */
++
++:root{--zm-ease:cubic-bezier(.16,1,.3,1)}
++
++/* 1 · Aparición al entrar en pantalla (zadra-motion.js agrega .is-in).
++   :where() deja la regla de ocultar sin peso de especificidad, para que .is-in siempre gane.
++   Esta lista debe coincidir con REVEAL en zadra-motion.js.
++   Para sumar un bloque propio desde el editor, basta con data-reveal. */
++.zm :where(.intro-heading,.section-heading,.comparison-wrap,.compare-empty,.product-gallery,.product-info,.category-tile,.rail>.product-card,.catalog-grid>.product-card,.editorial-card,[data-reveal]){opacity:0;translate:0 28px;transition:opacity .9s var(--zm-ease),translate .9s var(--zm-ease);transition-delay:calc(min(var(--i,0),6)*70ms)}
++.zm .product-info{transition-delay:.12s}
++.zm .is-in{opacity:1;translate:0 0}
++
++/* 2 · Hero: una sola secuencia de entrada */
++@keyframes zmRise{from{opacity:0;translate:0 22px}to{opacity:1;translate:0 0}}
++@keyframes zmLine{from{translate:0 105%}to{translate:0 0}}
++.zm .hero-photo{opacity:0;transition:opacity 1s var(--zm-ease),scale 1.8s var(--zm-ease)}
++.zm .hero-feature.is-in .hero-photo{opacity:1}
++.zm .hero-copy{position:relative;z-index:1}
++.zm .hero-copy>:nth-child(1){--k:0}
++.zm .hero-copy>:nth-child(3){--k:2.2}
++.zm .hero-copy>:nth-child(4){--k:3.2}
++.zm .hero-copy>:not(h2){opacity:0}
++.zm .hero-feature.is-in .hero-copy>:not(h2){animation:zmRise .9s var(--zm-ease) both;animation-delay:calc(.5s + var(--k,0)*.09s)}
++.zm .hero-copy h2{opacity:0}
++.zm .hero-copy h2[data-split]{opacity:1}
++.zm-line{display:block;overflow:hidden;padding-bottom:.1em;margin-bottom:-.1em}
++.zm-line>span{display:block}
++.zm .zm-line>span{translate:0 105%}
++.zm .hero-feature.is-in .zm-line>span{animation:zmLine 1.1s var(--zm-ease) both;animation-delay:calc(.25s + var(--l,0)*.12s)}
++.zm .concept-label{z-index:2}
++
++/* 3 · Hero en escritorio: la imagen responde al cursor y al scroll.
++   --nx / --ny (−1…1) los escribe el JS con el cursor; --py con el scroll. */
++@media(min-width:761px){
++  .zm .hero-feature{perspective:1400px}
++  .zm .hero-photo{scale:1.26;transform:translate3d(calc(var(--nx,0)*-14px),calc(var(--ny,0)*-10px + var(--py,0px)),0) rotateY(calc(var(--nx,0)*2deg)) rotateX(calc(var(--ny,0)*-1.6deg))}
++  .zm .hero-feature.is-in .hero-photo{scale:1.14}
++  .zm .hero-copy{transform:translate3d(calc(var(--nx,0)*7px),calc(var(--ny,0)*5px),0)}
++}
++/* Brillo suave que sigue al cursor */
++.zm .hero-feature::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .6s;background:radial-gradient(520px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.5),transparent 62%)}
++.zm .hero-feature.is-hover::after{opacity:1}
++
++/* 4 · Historias: la tarjeta crece al entrar y la imagen se desplaza con el scroll
++   (se mueve la ventana de recorte, no la caja, así no quedan bordes vacíos) */
++.zm .editorial-card{scale:var(--cs,1)}
++.zm .editorial-image{object-position:50% calc(50% + var(--p,0)*30%)}
++
++/* 5 · Ficha de producto: la imagen principal se inclina con el cursor
++   y se funde al cambiar de variante o de miniatura */
++@keyframes zmSwap{from{opacity:0;scale:.965}to{opacity:1;scale:1}}
++.zm .main-media{perspective:1100px}
++.zm .main-media img,.zm .main-media svg{transform:rotateY(calc(var(--nx,0)*7deg)) rotateX(calc(var(--ny,0)*-5deg))}
++.zm .main-media img.zm-swap{animation:zmSwap .55s var(--zm-ease)}
++
++/* 6 · Respuesta a acciones: encabezado y botones */
++.zm .site-header{transition:box-shadow .35s}
++.zm .site-header.is-scrolled{box-shadow:0 8px 30px rgba(0,0,0,.06)}
++.zm .btn{transition:background .2s,transform .2s,scale .25s var(--zm-ease)}
++.zm .btn:active{scale:.97}
++
++@media print{.zm *{opacity:1!important;translate:none!important;animation:none!important}}
+diff -ruN a/assets/zadra-motion.js b/assets/zadra-motion.js
+--- a/assets/zadra-motion.js	1970-01-01 00:00:00.000000000 +0000
++++ b/assets/zadra-motion.js	2026-10-26 23:41:37.594514257 +0000
+@@ -0,0 +1,147 @@
++/* zadra-motion.js — animaciones del tema zadra, sin dependencias.
++   Solo agrega clases y variables CSS (--nx, --ny, --py, --p, --cs, --i);
++   el aspecto de cada efecto vive en zadra-motion.css. */
++(() => {
++  'use strict';
++  const root = document.documentElement;
++  if (!root.classList.contains('zm')) return; // animaciones apagadas o movimiento reducido
++  root.setAttribute('data-zm-ready', '');
++
++  const designMode = !!(window.Shopify && window.Shopify.designMode); // en el editor, todo aparece al instante
++  const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
++  // Si algo falla, se apaga toda la capa para que la tienda nunca quede oculta.
++  const safe = fn => { try { fn(); } catch (error) { root.classList.remove('zm'); } };
++
++  // Debe coincidir con la primera regla de zadra-motion.css
++  const REVEAL = '.intro-heading,.section-heading,.comparison-wrap,.compare-empty,.product-gallery,.product-info,.category-tile,.rail>.product-card,.catalog-grid>.product-card,.editorial-card,[data-reveal]';
++
++  /* 1 · Aparición al entrar: los elementos que entran juntos salen escalonados */
++  const reveal = new IntersectionObserver(entries => {
++    let order = 0;
++    entries.forEach(entry => {
++      if (!entry.isIntersecting) return;
++      entry.target.style.setProperty('--i', order++);
++      entry.target.classList.add('is-in');
++      reveal.unobserve(entry.target);
++    });
++  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
++
++  /* 2 · Cursor: suaviza la posición del mouse y la publica como --nx / --ny (−1…1) */
++  function bindPointer(el) {
++    if (el.dataset.zmPointer) return;
++    el.dataset.zmPointer = '1';
++    const s = { x: 0, y: 0, tx: 0, ty: 0, raf: 0, inside: false };
++    const tick = () => {
++      s.raf = 0;
++      if (!el.isConnected) return;
++      s.x += (s.tx - s.x) * 0.09;
++      s.y += (s.ty - s.y) * 0.09;
++      el.style.setProperty('--nx', s.x.toFixed(4));
++      el.style.setProperty('--ny', s.y.toFixed(4));
++      if (s.inside || Math.abs(s.tx - s.x) > 0.002 || Math.abs(s.ty - s.y) > 0.002) s.raf = requestAnimationFrame(tick);
++    };
++    const kick = () => { if (!s.raf) s.raf = requestAnimationFrame(tick); };
++    el.addEventListener('pointermove', event => {
++      if (event.pointerType !== 'mouse') return;
++      const r = el.getBoundingClientRect();
++      s.tx = clamp(((event.clientX - r.left) / r.width) * 2 - 1, -1, 1);
++      s.ty = clamp(((event.clientY - r.top) / r.height) * 2 - 1, -1, 1);
++      el.style.setProperty('--mx', (event.clientX - r.left) + 'px');
++      el.style.setProperty('--my', (event.clientY - r.top) + 'px');
++      s.inside = true;
++      el.classList.add('is-hover');
++      kick();
++    });
++    el.addEventListener('pointerleave', () => {
++      s.inside = false; s.tx = 0; s.ty = 0;
++      el.classList.remove('is-hover');
++      kick();
++    });
++  }
++
++  /* 3 · Scroll: un solo bucle por frame, solo sobre lo que está en pantalla */
++  const visible = new Set();
++  const watcher = new IntersectionObserver(entries => {
++    entries.forEach(entry => entry.isIntersecting ? visible.add(entry.target) : visible.delete(entry.target));
++    requestFrame();
++  }, { rootMargin: '10% 0px' });
++  const header = document.querySelector('.site-header');
++  let queued = false;
++  function frame() {
++    queued = false;
++    const vh = window.innerHeight;
++    if (header) header.classList.toggle('is-scrolled', window.scrollY > 8);
++    visible.forEach(el => {
++      if (!el.isConnected) { visible.delete(el); return; }
++      const r = el.getBoundingClientRect();
++      if (el.classList.contains('hero-feature')) {
++        el.style.setProperty('--py', (clamp(-r.top / r.height) * 44).toFixed(1) + 'px');
++      } else {
++        const p = clamp((r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2), -1, 1);
++        el.style.setProperty('--p', p.toFixed(3));
++        el.style.setProperty('--cs', (0.94 + 0.06 * clamp((vh - r.top) / (vh * 0.65))).toFixed(4));
++      }
++    });
++  }
++  function requestFrame() { if (!queued) { queued = true; requestAnimationFrame(frame); } }
++  window.addEventListener('scroll', requestFrame, { passive: true });
++  window.addEventListener('resize', requestFrame);
++
++  function watch(el) {
++    if (el.dataset.zmWatch) return;
++    el.dataset.zmWatch = '1';
++    watcher.observe(el);
++  }
++
++  /* Hero: titular en líneas con máscara + entrada cuando la imagen ya está lista */
++  function initHero(hero) {
++    if (hero.dataset.zmHero) return;
++    hero.dataset.zmHero = '1';
++    const title = hero.querySelector('.hero-copy h2');
++    if (title && !title.dataset.split) {
++      const lines = title.innerHTML.split(/<br\s*\/?>/i).map(line => line.trim()).filter(Boolean);
++      title.innerHTML = lines.map((line, n) => '<span class="zm-line" style="--l:' + n + '"><span>' + line + '</span></span>').join('');
++      title.dataset.split = '1';
++    }
++    const image = hero.querySelector('.hero-photo');
++    const go = () => hero.classList.add('is-in');
++    if (designMode || !image) { go(); return; }
++    const decoded = image.decode ? image.decode().catch(() => {}) : Promise.resolve();
++    Promise.race([decoded, new Promise(resolve => setTimeout(resolve, 800))]).then(go);
++  }
++
++  /* Ficha de producto: fundido cuando zadra.js cambia la imagen (variante o miniatura) */
++  function initProductImage(media) {
++    const image = media.querySelector('img');
++    if (!image || image.dataset.zmSwap) return;
++    image.dataset.zmSwap = '1';
++    let pending = false;
++    new MutationObserver(() => { pending = true; }).observe(image, { attributes: true, attributeFilter: ['src'] });
++    image.addEventListener('load', () => {
++      if (!pending) return;
++      pending = false;
++      image.classList.remove('zm-swap');
++      void image.offsetWidth; // reinicia la animación
++      image.classList.add('zm-swap');
++    });
++  }
++
++  function init(scope = document) {
++    safe(() => {
++      scope.querySelectorAll(REVEAL).forEach(el => {
++        if (el.dataset.zmReveal) return;
++        el.dataset.zmReveal = '1';
++        if (designMode) el.classList.add('is-in'); else reveal.observe(el);
++      });
++      scope.querySelectorAll('.hero-feature').forEach(hero => { initHero(hero); bindPointer(hero); watch(hero); });
++      scope.querySelectorAll('.editorial-card').forEach(watch);
++      scope.querySelectorAll('.main-media').forEach(media => { initProductImage(media); bindPointer(media); });
++      scope.querySelectorAll('[data-pointer]').forEach(bindPointer);
++      requestFrame();
++    });
++  }
++
++  // El editor de Shopify recarga secciones sueltas: se inicializa solo lo nuevo.
++  document.addEventListener('shopify:section:load', event => init(event.target));
++  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => init()); else init();
++})();
+diff -ruN a/config/settings_schema.json b/config/settings_schema.json
+--- a/config/settings_schema.json	2026-10-26 19:57:44.000000000 +0000
++++ b/config/settings_schema.json	2026-10-26 23:41:37.594656167 +0000
+@@ -22,5 +22,17 @@
+         "label": "Favicon"
+       }
+     ]
++  },
++  {
++    "name": "Animaciones",
++    "settings": [
++      {
++        "type": "checkbox",
++        "id": "motion_enabled",
++        "label": "Activar animaciones",
++        "default": true,
++        "info": "Entrada de secciones, hero que responde al cursor y efectos al hacer scroll. Se desactivan solas si el visitante pide menos movimiento."
++      }
++    ]
+   }
+ ]
+diff -ruN a/layout/theme.liquid b/layout/theme.liquid
+--- a/layout/theme.liquid	2026-10-26 19:57:44.000000000 +0000
++++ b/layout/theme.liquid	2026-10-26 23:41:37.594788359 +0000
+@@ -10,6 +10,10 @@
+ {% if settings.favicon %}<link rel="icon" href="{{ settings.favicon | image_url: width: 32 }}">{% endif %}
+ {{ content_for_header }}
+ {{ 'zadra.css' | asset_url | stylesheet_tag }}<script src="{{ 'zadra.js' | asset_url }}" defer></script>
++{%- if settings.motion_enabled -%}
++<script>(function(d){if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('zm');setTimeout(function(){if(!d.hasAttribute('data-zm-ready'))d.classList.remove('zm')},4000)}})(document.documentElement)</script>
++{{ 'zadra-motion.css' | asset_url | stylesheet_tag }}<script src="{{ 'zadra-motion.js' | asset_url }}" defer></script>
++{%- endif -%}
+ </head><body>
+ <a class="skip" href="#MainContent">Ir al contenido</a>
+ {% sections 'header-group' %}
