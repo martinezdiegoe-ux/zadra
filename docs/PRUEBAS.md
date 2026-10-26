@@ -10,6 +10,7 @@ Fecha: 26/10/2026. Alcance: código y vista local generada desde las secciones L
 | Vista responsive | Diez pantallas × seis anchos = 60 comprobaciones DOM; sin desbordamiento global ni imágenes rotas |
 | Tamaños de iframe | 320, 375, 390, 768, 1024 y 1440 px; el área de contenido descuenta el scrollbar del navegador |
 | Pantallas revisadas | Inicio, catálogo, producto, comparador, bolsa vacía, bolsa con artículos, buscador, contacto, catálogo vacío y 404 |
+| Menú móvil | Apertura y cierre con Escape comprobados |
 | Variantes y galería | Cambio de precio y precio anterior, estado agotado, bloqueo de compra y cambio de miniatura comprobados en navegador local |
 | Recursos | SVG originales locales, sin fuentes ni librerías remotas en ejecución |
 | Datos ficticios | Limitados a la vista local, rotulados y sin conexión comercial |
