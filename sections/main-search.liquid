@@ -1,0 +1,7 @@
+<section class="shell section"><p class="eyebrow">Encontrá lo que buscás</p><h1>Buscar en zadra.</h1><form class="page-search" role="search" action="{{ routes.search_url }}"><label class="sr-only" for="SearchPage">Buscar productos</label><input type="search" id="SearchPage" name="q" value="{{ search.terms | escape }}" placeholder="Nombre o característica" required><input type="hidden" name="type" value="product"><button class="btn">Buscar</button></form>{% if search.performed %}<h2 class="results-title">Resultados para «{{ search.terms | escape }}»</h2>{% render 'filters', results: search %}{% paginate search.results by 24 %}<p class="muted">{{ search.results_count }} resultados</p><div class="catalog-grid">{% for product in search.results %}{% if product.object_type == 'product' %}{% render 'product-card', product: product %}{% else %}<article><h3><a href="{{ product.url }}">{{ product.title | escape }}</a></h3></article>{% endif %}{% else %}<div class="empty-state"><h2>No encontramos coincidencias.</h2><p>Probá con otro nombre o explorá el catálogo.</p><a class="text-link" href="{{ routes.all_products_collection_url }}">Ver productos ↗</a></div>{% endfor %}</div>{% render 'pagination', paginate: paginate %}{% endpaginate %}{% endif %}</section>
+{% schema %}
+{
+  "name": "Buscador zadra",
+  "settings": []
+}
+{% endschema %}

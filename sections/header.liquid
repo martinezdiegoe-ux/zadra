@@ -1,0 +1,19 @@
+<header class="site-header"><div class="nav-shell">
+<a class="brand" href="{{ routes.root_url }}" aria-label="zadra, inicio">zadra<span aria-hidden="true">.</span></a>
+<nav class="desktop-nav" aria-label="Principal">
+{% if section.settings.menu != blank %}{% for link in section.settings.menu.links %}{% if link.links != blank %}<details class="nav-dropdown"><summary>{{ link.title | escape }}</summary><div class="nav-submenu"><a href="{{ link.url }}">{{ link.title | escape }}</a>{% for child in link.links %}<a href="{{ child.url }}">{{ child.title | escape }}</a>{% endfor %}</div></details>{% else %}<a href="{{ link.url }}" {% if link.current %}aria-current="page"{% endif %}>{{ link.title | escape }}</a>{% endif %}{% endfor %}{% else %}<a href="{{ routes.all_products_collection_url }}">Explorar</a><a href="{{ routes.collections_url }}">Colecciones</a><a href="{{ routes.root_url }}#comparar">Comparar</a><a href="mailto:{{ settings.contact_email | escape }}">Contacto</a>{% endif %}
+</nav><div class="nav-actions"><details class="search-panel"><summary aria-label="Abrir buscador">{% render 'icon', name: 'search' %}</summary><form action="{{ routes.search_url }}" method="get" role="search"><label for="HeaderSearch">¿Qué estás buscando?</label><div class="search-field"><input id="HeaderSearch" name="q" type="search" placeholder="Buscar en zadra" required><input type="hidden" name="type" value="product"><button class="icon-button" aria-label="Buscar">{% render 'icon', name: 'search' %}</button></div></form></details>
+<a class="bag" href="{{ routes.cart_url }}" aria-label="Bolsa: {{ cart.item_count }} productos">{% render 'icon', name: 'bag' %}{% if cart.item_count > 0 %}<span class="bag-count">{{ cart.item_count }}</span>{% endif %}</a>
+<details class="mobile-menu"><summary aria-label="Abrir menú">{% render 'icon', name: 'menu' %}</summary><nav aria-label="Menú móvil">{% if section.settings.menu != blank %}{% for link in section.settings.menu.links %}<a href="{{ link.url }}">{{ link.title | escape }}</a>{% for child in link.links %}<a class="child-link" href="{{ child.url }}">{{ child.title | escape }}</a>{% endfor %}{% endfor %}{% else %}<a href="{{ routes.all_products_collection_url }}">Explorar productos</a><a href="{{ routes.collections_url }}">Colecciones</a><a href="{{ routes.root_url }}#comparar">Comparar</a><a href="mailto:{{ settings.contact_email | escape }}">Contacto</a>{% endif %}</nav></details></div></div></header>
+{% schema %}
+{
+  "name": "Navegación zadra",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Menú principal"
+    }
+  ]
+}
+{% endschema %}

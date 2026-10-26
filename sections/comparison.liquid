@@ -1,0 +1,50 @@
+<section class="section surface" id="comparar"><div class="shell"><div class="section-heading"><div><p class="eyebrow">{{ section.settings.kicker | escape }}</p><h2>{{ section.settings.title | escape }}</h2></div></div>{% assign compare_collection = section.settings.collection %}{% if template.suffix == 'compare' %}{% assign compare_collection = collection %}{% endif %}{% if compare_collection.products.size > 0 %}<p class="muted">{{ compare_collection.title | escape }} · Hasta cuatro productos de esta colección. Datos cargados por zadra.</p><div class="comparison-wrap" tabindex="0" role="region" aria-label="Tabla comparativa, desplazamiento horizontal"><table class="comparison-table"><caption class="sr-only">Comparación de {{ compare_collection.title | escape }}</caption><thead><tr><th scope="col">Características</th>{% for product in compare_collection.products limit: 4 %}<th scope="col">{% if product.featured_image %}{{ product.featured_image | image_url: width: 320 | image_tag: width: 160, loading: 'lazy' }}{% endif %}<a href="{{ product.url }}">{{ product.title | escape }}</a></th>{% endfor %}</tr></thead><tbody><tr><th scope="row">Precio</th>{% for product in compare_collection.products limit: 4 %}<td>{% if product.price_varies %}Desde {% endif %}{{ product.price | money }}</td>{% endfor %}</tr><tr><th scope="row">Disponibilidad</th>{% for product in compare_collection.products limit: 4 %}<td>{% if product.available %}Disponible{% else %}Agotado{% endif %}</td>{% endfor %}</tr>{% for block in section.blocks %}<tr {{ block.shopify_attributes }}><th scope="row">{{ block.settings.label | escape }}</th>{% for product in compare_collection.products limit: 4 %}{% assign feature = product.metafields.custom[block.settings.key] %}<td>{{ feature.value | default: 'Sin especificar' | escape }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>{% else %}<div class="compare-empty"><span aria-hidden="true">▥</span><div><h3>Una elección más clara.</h3><p>Las características se mostrarán cuando esté disponible el catálogo.</p><a class="text-link" href="{{ routes.all_products_collection_url }}">Explorar productos ↗</a></div></div>{% endif %}</div></section>
+{% schema %}
+{
+  "name": "Comparador",
+  "settings": [
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "Antetítulo",
+      "default": "Elegí con claridad"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "El detalle hace la diferencia."
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Una colección de la misma categoría"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "feature",
+      "name": "Característica",
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Etiqueta",
+          "default": "Material"
+        },
+        {
+          "type": "text",
+          "id": "key",
+          "label": "Clave del metacampo custom",
+          "default": "material"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Comparador"
+    }
+  ]
+}
+{% endschema %}

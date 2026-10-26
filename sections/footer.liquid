@@ -1,0 +1,29 @@
+<footer class="site-footer"><div class="shell"><div class="footer-top"><a class="brand" href="{{ routes.root_url }}">zadra<span>.</span></a><p>{{ section.settings.tagline | escape }}</p></div><div class="footer-grid"><div><h2>Explorar</h2><a href="{{ routes.all_products_collection_url }}">Todos los productos</a><a href="{{ routes.collections_url }}">Colecciones</a><a href="{{ routes.search_url }}">Buscar</a><a href="{{ routes.cart_url }}">Tu bolsa</a></div><div><h2>Estamos cerca</h2><a href="mailto:{{ settings.contact_email | escape }}">{{ settings.contact_email | escape }}</a>{% if section.settings.contact_page != blank %}<a href="{{ section.settings.contact_page.url }}">Contactanos</a>{% endif %}{% for link in section.settings.menu.links %}<a href="{{ link.url }}">{{ link.title | escape }}</a>{% endfor %}</div><div><h2>Información comercial</h2>{% for policy in shop.policies %}{% if policy.body != blank %}<a href="{{ policy.url }}">{{ policy.title | escape }}</a>{% endif %}{% endfor %}{% if section.settings.returns_page != blank %}<a href="{{ section.settings.returns_page.url }}">Solicitar devolución o arrepentimiento</a>{% endif %}</div></div><div class="footer-bottom"><small>© {{ 'now' | date: '%Y' }} zadra. Todos los derechos reservados.</small><small>{{ localization.country.name | escape }} · {{ cart.currency.iso_code }}</small></div></div></footer>
+{% schema %}
+{
+  "name": "Pie de página",
+  "settings": [
+    {
+      "type": "text",
+      "id": "tagline",
+      "label": "Frase",
+      "default": "Diseño que se siente. Detalles que importan."
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Enlaces útiles"
+    },
+    {
+      "type": "page",
+      "id": "contact_page",
+      "label": "Página de contacto"
+    },
+    {
+      "type": "page",
+      "id": "returns_page",
+      "label": "Página de arrepentimiento / devoluciones"
+    }
+  ]
+}
+{% endschema %}
