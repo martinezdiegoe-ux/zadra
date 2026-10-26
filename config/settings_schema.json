@@ -1,0 +1,26 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "zadra",
+    "theme_author": "zadra",
+    "theme_version": "1.1.0",
+    "theme_documentation_url": "https://github.com/martinezdiegoe-ux/zadra",
+    "theme_support_url": "https://github.com/martinezdiegoe-ux/zadra/issues"
+  },
+  {
+    "name": "Identidad y contacto",
+    "settings": [
+      {
+        "type": "text",
+        "id": "contact_email",
+        "label": "Correo de contacto",
+        "default": "ventas@zadrastore.com"
+      },
+      {
+        "type": "image_picker",
+        "id": "favicon",
+        "label": "Favicon"
+      }
+    ]
+  }
+]
