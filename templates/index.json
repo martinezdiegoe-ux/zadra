@@ -1,0 +1,122 @@
+{
+  "sections": {
+    "hero": {
+      "type": "zadra-home",
+      "settings": {},
+      "blocks": {
+        "cat0": {
+          "type": "category",
+          "settings": {
+            "title": "Tecnología",
+            "art": "laptop"
+          }
+        },
+        "cat1": {
+          "type": "category",
+          "settings": {
+            "title": "Audio",
+            "art": "audio"
+          }
+        },
+        "cat2": {
+          "type": "category",
+          "settings": {
+            "title": "Accesorios",
+            "art": "watch"
+          }
+        },
+        "cat3": {
+          "type": "category",
+          "settings": {
+            "title": "Tu espacio",
+            "art": "display"
+          }
+        }
+      },
+      "block_order": [
+        "cat0",
+        "cat1",
+        "cat2",
+        "cat3"
+      ]
+    },
+    "featured": {
+      "type": "featured-products",
+      "settings": {}
+    },
+    "stories": {
+      "type": "editorial",
+      "settings": {},
+      "blocks": {
+        "one": {
+          "type": "story",
+          "settings": {
+            "kicker": "Diseño que inspira",
+            "heading": "Lo esencial.\nExtraordinario.",
+            "text": "Una nueva mirada a lo que te acompaña.",
+            "dark": true
+          }
+        },
+        "two": {
+          "type": "story",
+          "settings": {
+            "kicker": "A tu ritmo",
+            "heading": "Más espacio\npara tus ideas.",
+            "text": "Detalles que abren nuevas posibilidades.",
+            "dark": false
+          }
+        }
+      },
+      "block_order": [
+        "one",
+        "two"
+      ]
+    },
+    "compare": {
+      "type": "comparison",
+      "settings": {},
+      "blocks": {
+        "material": {
+          "type": "feature",
+          "settings": {
+            "label": "Material",
+            "key": "material"
+          }
+        },
+        "dimensions": {
+          "type": "feature",
+          "settings": {
+            "label": "Dimensiones",
+            "key": "dimensions"
+          }
+        },
+        "connectivity": {
+          "type": "feature",
+          "settings": {
+            "label": "Conectividad",
+            "key": "connectivity"
+          }
+        },
+        "warranty": {
+          "type": "feature",
+          "settings": {
+            "label": "Garantía",
+            "key": "warranty"
+          }
+        }
+      },
+      "block_order": [
+        "material",
+        "dimensions",
+        "connectivity",
+        "warranty"
+      ]
+    }
+  },
+  "order": [
+    "hero",
+    "featured",
+    "stories",
+    "compare"
+  ]
+}
