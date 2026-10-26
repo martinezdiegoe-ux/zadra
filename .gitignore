@@ -1,0 +1,21 @@
+node_modules/
+release/
+dist/
+.shopify/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+coverage/
+test-results/
+playwright-report/
+*.pem
+*.key
+*.p12
+config/settings_data.json.bak
+
+# Local preview output and local hosting metadata
+preview/
+.openai/
