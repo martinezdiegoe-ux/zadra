@@ -22,5 +22,17 @@
         "label": "Favicon"
       }
     ]
+  },
+  {
+    "name": "Animaciones",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "motion_enabled",
+        "label": "Activar animaciones",
+        "default": true,
+        "info": "Entrada de secciones, hero que responde al cursor y efectos al hacer scroll. Se desactivan solas si el visitante pide menos movimiento."
+      }
+    ]
   }
 ]
