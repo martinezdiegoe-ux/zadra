@@ -5,7 +5,7 @@
   "description": "Tema nativo Shopify Online Store 2.0 para zadra",
   "scripts": {
     "check": "node scripts/check.mjs",
-    "preview:build": "node scripts/preview.mjs",
+    "preview:build": "node scripts/preview.mjs && node scripts/check-preview.mjs",
     "package": "python3 scripts/package.py",
     "preview:standalone": "node scripts/preview.mjs && node scripts/standalone.mjs"
   },
