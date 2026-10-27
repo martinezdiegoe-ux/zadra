@@ -7,8 +7,14 @@ await fs.mkdir(D,{recursive:true});
 await fs.cp(path.join(R,'assets'),path.join(D,'assets'),{recursive:true});
 const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 const engine=new Liquid({root:path.join(R,'snippets'),extname:'.liquid',strictFilters:false,strictVariables:false});
+// Use Shopify's saved settings on top of schema defaults, including new patch settings.
+const settingsSchema=JSON.parse(await fs.readFile(path.join(R,'config/settings_schema.json'),'utf8'));
+const settingsData=JSON.parse(await fs.readFile(path.join(R,'config/settings_data.json'),'utf8'));
+const themeSettings=Object.fromEntries(settingsSchema.flatMap(group=>group.settings||[]).filter(setting=>'default' in setting).map(setting=>[setting.id,setting.default]));
+Object.assign(themeSettings,settingsData.current);
 engine.registerFilter('json',x=>JSON.stringify(x??null));
 engine.registerFilter('asset_url',x=>'assets/'+x);
+engine.registerFilter('stylesheet_tag',href=>`<link rel="stylesheet" href="${esc(href)}">`);
 engine.registerFilter('image_url',(x,...args)=>typeof x==='string'?x:x?.src||'');
 engine.registerFilter('image_tag',(src,...args)=>{
  const a=Object.fromEntries(args.filter(Array.isArray));delete a.widths;delete a.sizes;
@@ -27,7 +33,7 @@ function product(id,title,art='laptop'){
 }
 const products=[product(1,'Producto de prueba A'),product(2,'Producto de prueba B','audio'),product(3,'Producto de prueba C','watch'),product(4,'Producto de prueba D','display')];
 const collection={title:'Colección de prueba',url:'catalog.html',products,products_count:products.length,description:'<p>Datos ficticios, exclusivamente para verificar el tema.</p>',filters:[{type:'list',label:'Disponibilidad',active_values:[],values:[{param_name:'filter.v.availability',value:'1',label:'Disponible',count:4}]}],sort_options:[{value:'manual',name:'Destacados'},{value:'price-ascending',name:'Menor precio'}],default_sort_by:'manual'};
-const base={settings:{contact_email:'ventas@zadrastore.com'},shop:{name:'zadra',policies:[]},cart:{item_count:0,currency:{iso_code:'ARS'}},localization:{country:{name:'Argentina'}},request:{locale:{iso_code:'es'},page_type:'index'},routes:{root_url:'index.html',all_products_collection_url:'catalog.html',collections_url:'collections.html',search_url:'search.html',cart_url:'cart.html'},template:{suffix:''},form:{},paginate:{pages:1},page:{title:'Contactanos',content:'<p>Esta vista previa no envía mensajes.</p>'},product:products[0],collection,search:{performed:true,terms:'ejemplo',results:products,results_count:4,filters:[],sort_options:collection.sort_options}};
+const base={settings:themeSettings,shop:{name:'zadra',policies:[]},cart:{item_count:0,currency:{iso_code:'ARS'}},localization:{country:{name:'Argentina'}},request:{locale:{iso_code:'es'},page_type:'index'},routes:{root_url:'index.html',all_products_collection_url:'catalog.html',collections_url:'collections.html',search_url:'search.html',cart_url:'cart.html'},template:{suffix:''},form:{},paginate:{pages:1},page:{title:'Contactanos',content:'<p>Esta vista previa no envía mensajes.</p>'},product:products[0],collection,search:{performed:true,terms:'ejemplo',results:products,results_count:4,filters:[],sort_options:collection.sort_options}};
 function source(raw){
  return raw.replace(/{%\s*schema\s*%}[\s\S]*?{%\s*endschema\s*%}/g,'').replace(/{%\s*form\s+([^%]+)%}/g,(_,args)=>`<form method="get" action="#" ${args.includes('product')?'class="product-form" id="ProductForm"':'class="preview-only-form"'}>`).replace(/{%\s*endform\s*%}/g,'</form>').replace(/{%\s*paginate\s+[^%]+%}/g,'').replace(/{%\s*endpaginate\s*%}/g,'');
 }
@@ -42,7 +48,17 @@ async function renderSection(type,settings={},blocks={},context={}){
 const head=await renderSection('header'),foot=await renderSection('footer');
 const note=`<aside class="preview-note">VISTA PREVIA · Contenido demostrativo · Sin conexión a Shopify ni compras reales. <a href="qa.html">Probar tamaños</a> · <a href="catalog.html">Catálogo</a> · <a href="product.html">Ficha</a> · <a href="compare.html">Comparador</a> · <a href="cart.html">Bolsa</a> · <a href="search.html">Buscador</a> · <a href="contact.html">Contacto</a></aside>`;
 const fixtureScript=`<script>document.addEventListener('submit',e=>{e.preventDefault();e.stopImmediatePropagation();const status=e.target.querySelector('.form-feedback')||document.getElementById('LiveStatus');status.className='preview-feedback';status.textContent='Vista previa: esta operación requiere una tienda Shopify conectada.';},true);</script>`;
-async function page(name,body){await fs.writeFile(path.join(D,name),`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>zadra · vista previa</title><link rel="stylesheet" href="assets/zadra.css"><style>.preview-note{font:11px/1.5 Arial;background:#17223b;color:#fff;padding:9px 20px;text-align:center}.preview-note a{text-decoration:underline;margin-left:6px}.preview-feedback{display:block!important;font-size:14px;color:#0066cc;padding:16px}.site-header{top:0}</style>${fixtureScript}<script src="assets/zadra.js" defer></script></head><body><a class="skip" href="#MainContent">Ir al contenido</a>${note}${head}<main id="MainContent" tabindex="-1">${body}</main>${foot}<p class="sr-only" id="LiveStatus" role="status" aria-live="polite"></p></body></html>`);}
+// Render the actual layout as well as sections. Rebuilding a second <head> here
+// silently omitted patch assets (for example, the motion stylesheet and script).
+const layout=(await fs.readFile(path.join(R,'layout/theme.liquid'),'utf8'))
+ .replace(/{%\s*sections\s+'header-group'\s*%}/g,'{{ preview_header }}')
+ .replace(/{%\s*sections\s+'footer-group'\s*%}/g,'{{ preview_footer }}')
+ .replace(/<body>/,'<body>{{ preview_note }}');
+const previewHeader=`<meta name="robots" content="noindex"><style>.preview-note{font:11px/1.5 Arial;background:#17223b;color:#fff;padding:9px 20px;text-align:center}.preview-note a{text-decoration:underline;margin-left:6px}.preview-feedback{display:block!important;font-size:14px;color:#0066cc;padding:16px}.site-header{top:0}</style>${fixtureScript}`;
+async function page(name,body){
+ const html=await engine.parseAndRender(layout,{...base,current_page:1,page_title:'Vista previa',canonical_url:name,content_for_header:previewHeader,content_for_layout:body,preview_header:head,preview_footer:foot,preview_note:note});
+ await fs.writeFile(path.join(D,name),html);
+}
 const index=JSON.parse(await fs.readFile(path.join(R,'templates/index.json'),'utf8'));let home='';
 for(const id of index.order){const s=index.sections[id];home+=await renderSection(s.type,s.settings,s.blocks||{});}
 await page('index.html',home);
